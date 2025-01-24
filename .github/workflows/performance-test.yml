@@ -28,26 +28,13 @@ jobs:
         run: npm install
 
       - name: Run Load Test
-        run: k6 run tests/load-test.js --out json=load-test-results.json
+        run: k6 run tests/load-test.js --out html=load-test-report.html
 
       - name: Run Stress Test
-        run: k6 run tests/stress-test.js --out json=stress-test-results.json
+        run: k6 run tests/stress-test.js --out html=stress-test-report.html
 
       - name: Run Spike Test
-        run: k6 run tests/spike-test.js --out json=spike-test-results.json
-
-      - name: Generate HTML Reports
-        run: |
-          node -e '
-            const reporter = require("k6-reporter");
-            const fs = require("fs");
-            
-            const tests = ["load", "stress", "spike"];
-            tests.forEach(test => {
-              const data = JSON.parse(fs.readFileSync(`${test}-test-results.json`));
-              const html = reporter.generateSummaryReport(data);
-              fs.writeFileSync(`${test}-test-report.html`, html);
-            });
+        run: k6 run tests/spike-test.js --out html=spike-test-report.html
           '
 
       - name: Archive test results
