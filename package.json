@@ -7,6 +7,9 @@
     "test:stress": "k6 run tests/stress-test.js",
     "test:spike": "k6 run tests/spike-test.js"
   },
+  "dependencies": {
+    "k6-reporter": "^3.0.0"
+  },
   "keywords": ["k6", "performance-testing", "load-testing"],
   "author": "",
   "license": "ISC"

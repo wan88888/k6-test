@@ -25,7 +25,7 @@ jobs:
           sudo apt-get install k6
 
       - name: Install dependencies
-        run: npm ci && npm install k6-reporter
+        run: npm install
 
       - name: Run Load Test
         run: k6 run tests/load-test.js --out json=load-test-results.json
@@ -63,7 +63,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.K6Test_TOKEN }}
           publish_dir: .
           publish_branch: gh-pages
           keep_files: false
@@ -87,17 +87,14 @@ jobs:
                     \"content\": [
                       [{
                         \"tag\": \"text\",
-                        \"text\": \"🎯 性能测试已完成\n\n执行时间：$TIMESTAMP\n\n测试报告链接：\"}
-                      ],
+                        \"text\": \"🎯 性能测试已完成\n\n执行时间：$TIMESTAMP\n\n测试报告链接：\"}],
                       [{
                         \"tag\": \"a\",
                         \"text\": \"查看详细报告\",
-                        \"href\": \"$REPORT_URL\"}
-                      ],
+                        \"href\": \"$REPORT_URL\"}],
                       [{
                         \"tag\": \"text\",
-                        \"text\": \"\n\n包含以下测试：\n• 负载测试 (Load Test)\n• 压力测试 (Stress Test)\n• 峰值测试 (Spike Test)\"}
-                      ]
+                        \"text\": \"\n\n包含以下测试：\n• 负载测试 (Load Test)\n• 压力测试 (Stress Test)\n• 峰值测试 (Spike Test)\"}]
                     ]
                   }
                 }
