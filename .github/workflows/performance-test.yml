@@ -27,41 +27,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Setup k6 Cloud
+        run: |
+          echo "K6_CLOUD_TOKEN=${{ secrets.K6_CLOUD_TOKEN }}" >> $GITHUB_ENV
+
       - name: Run Load Test
-        run: k6 run tests/load-test.js --out html=load-test-report.html
+        run: k6 cloud tests/load-test.js
 
       - name: Run Stress Test
-        run: k6 run tests/stress-test.js --out html=stress-test-report.html
+        run: k6 cloud tests/stress-test.js
 
       - name: Run Spike Test
-        run: k6 run tests/spike-test.js --out html=spike-test-report.html
-          '
-
-      - name: Archive test results
-        if: success()
-        uses: actions/upload-artifact@v3
-        with:
-          name: k6-test-results
-          path: |
-            *-test-results.json
-            *-test-report.html
-
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.K6Test_TOKEN }}
-          publish_dir: .
-          publish_branch: gh-pages
-          keep_files: false
-          enable_jekyll: false
-          exclude_assets: '*-test-results.json'
+        run: k6 cloud tests/spike-test.js
 
       - name: Send Report to Feishu
         if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
-          REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
-          REPORT_URL="https://$GITHUB_REPOSITORY_OWNER.github.io/$REPO_NAME"
           TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
           
           curl -X POST -H "Content-Type: application/json" \
@@ -77,8 +58,20 @@ jobs:
                         \"text\": \"🎯 性能测试已完成\n\n执行时间：$TIMESTAMP\n\n测试报告链接：\"}],
                       [{
                         \"tag\": \"a\",
-                        \"text\": \"查看详细报告\",
-                        \"href\": \"$REPORT_URL\"}],
+                        \"text\": \"查看负载测试报告\",
+                        \"href\": \"https://app.k6.io/runs/latest\"}, {
+                        \"tag\": \"text\",
+                        \"text\": \"\n\"}],
+                      [{
+                        \"tag\": \"a\",
+                        \"text\": \"查看压力测试报告\",
+                        \"href\": \"https://app.k6.io/runs/latest\"}, {
+                        \"tag\": \"text\",
+                        \"text\": \"\n\"}],
+                      [{
+                        \"tag\": \"a\",
+                        \"text\": \"查看峰值测试报告\",
+                        \"href\": \"https://app.k6.io/runs/latest\"}],
                       [{
                         \"tag\": \"text\",
                         \"text\": \"\n\n包含以下测试：\n• 负载测试 (Load Test)\n• 压力测试 (Stress Test)\n• 峰值测试 (Spike Test)\"}]
