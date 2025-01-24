@@ -1,0 +1,106 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Install dependencies
+        run: npm ci && npm install k6-reporter
+
+      - name: Run Load Test
+        run: k6 run tests/load-test.js --out json=load-test-results.json
+
+      - name: Run Stress Test
+        run: k6 run tests/stress-test.js --out json=stress-test-results.json
+
+      - name: Run Spike Test
+        run: k6 run tests/spike-test.js --out json=spike-test-results.json
+
+      - name: Generate HTML Reports
+        run: |
+          node -e '
+            const reporter = require("k6-reporter");
+            const fs = require("fs");
+            
+            const tests = ["load", "stress", "spike"];
+            tests.forEach(test => {
+              const data = JSON.parse(fs.readFileSync(`${test}-test-results.json`));
+              const html = reporter.generateSummaryReport(data);
+              fs.writeFileSync(`${test}-test-report.html`, html);
+            });
+          '
+
+      - name: Archive test results
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: k6-test-results
+          path: |
+            *-test-results.json
+            *-test-report.html
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: false
+          enable_jekyll: false
+          exclude_assets: '*-test-results.json'
+
+      - name: Send Report to Feishu
+        if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: |
+          REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
+          REPORT_URL="https://$GITHUB_REPOSITORY_OWNER.github.io/$REPO_NAME"
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{
+              \"msg_type\": \"post\",
+              \"content\": {
+                \"post\": {
+                  \"zh_cn\": {
+                    \"title\": \"性能测试报告\",
+                    \"content\": [
+                      [{
+                        \"tag\": \"text\",
+                        \"text\": \"🎯 性能测试已完成\n\n执行时间：$TIMESTAMP\n\n测试报告链接：\"}
+                      ],
+                      [{
+                        \"tag\": \"a\",
+                        \"text\": \"查看详细报告\",
+                        \"href\": \"$REPORT_URL\"}
+                      ],
+                      [{
+                        \"tag\": \"text\",
+                        \"text\": \"\n\n包含以下测试：\n• 负载测试 (Load Test)\n• 压力测试 (Stress Test)\n• 峰值测试 (Spike Test)\"}
+                      ]
+                    ]
+                  }
+                }
+              }
+            }" \
+            ${{ secrets.FEISHU_WEBHOOK_URL }}
