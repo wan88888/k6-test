@@ -26,16 +26,20 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Set test scripts permissions
-        run: chmod +x tests/*.js
-      
       - name: Run k6 tests
         uses: grafana/k6-action@v0.3.1
         with:
-          filename: |
-            tests/load-test.js
-            tests/stress-test.js
-            tests/spike-test.js
+          filename: tests/load-test.js
+
+      - name: Run stress test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/stress-test.js
+
+      - name: Run spike test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/spike-test.js
       
       - name: Upload Test Results
         if: always()
