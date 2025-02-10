@@ -13,21 +13,21 @@ export default function() {
   // 帖子管理模块
   group('posts', () => {
     const postsResponse = client.get('/posts');
-    HttpClient.sleep(0.1);
+    HttpClient.sleep(0.05);  // 减少请求间隔时间
     
     const newPost = client.post('/posts', {
       title: 'Test Post',
       body: 'This is a test post',
       userId: 1
     });
-    HttpClient.sleep(0.1);
+    HttpClient.sleep(0.1);  // 减少写操作等待时间
   });
 
   // 评论管理模块
   group('comments', () => {
     const postDetails = client.get('/posts/1');
     const comments = client.get('/posts/1/comments');
-    HttpClient.sleep(0.1);
+    HttpClient.sleep(0.05);
 
     const newComment = client.post('/posts/1/comments', {
       name: 'Test Comment',
@@ -41,13 +41,12 @@ export default function() {
   group('albums', () => {
     const albums = client.get('/albums');
     const photos = client.get('/albums/1/photos');
-    HttpClient.sleep(0.1);
+    HttpClient.sleep(0.05);
   });
 
-  // 待办事项管理模块
   group('todos-read', () => {
     const todos = client.get('/todos');
-    HttpClient.sleep(0.1);
+    HttpClient.sleep(0.05);
   });
 
   group('todos-write', () => {
@@ -66,6 +65,6 @@ export default function() {
     HttpClient.sleep(0.1);
 
     const deleteTodo = client.delete('/todos/1');
-    HttpClient.sleep(0.1);
+    HttpClient.sleep(0.05);
   });
 }

@@ -1,0 +1,54 @@
+name: K6 Performance Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  performance-test:
+    name: Run K6 Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run k6 tests
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: |
+            tests/load-test.js
+            tests/stress-test.js
+            tests/spike-test.js
+      
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-test-results
+          path: |
+            summary.html
+            k6-summary-*.json
+            k6-metrics-*.json
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 性能测试失败',
+              body: `性能测试在分支 ${context.ref} 上失败。\n请查看测试结果以了解详情。`
+            })
