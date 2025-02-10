@@ -30,16 +30,19 @@ jobs:
         uses: grafana/k6-action@v0.3.1
         with:
           filename: tests/load-test.js
+          flags: --out json=results/load-test.json --summary-export=results/load-test-summary.json
 
       - name: Run stress test
         uses: grafana/k6-action@v0.3.1
         with:
           filename: tests/stress-test.js
+          flags: --out json=results/stress-test.json --summary-export=results/stress-test-summary.json
 
       - name: Run spike test
         uses: grafana/k6-action@v0.3.1
         with:
           filename: tests/spike-test.js
+          flags: --out json=results/spike-test.json --summary-export=results/spike-test-summary.json
       
       - name: Upload Test Results
         if: always()
@@ -47,6 +50,4 @@ jobs:
         with:
           name: k6-test-results
           path: |
-            summary.html
-            k6-summary-*.json
-            k6-metrics-*.json
+            results/*.json
