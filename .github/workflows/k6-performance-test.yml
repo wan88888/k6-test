@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      - name: Set test scripts permissions
+        run: chmod +x tests/*.js
+      
       - name: Run k6 tests
         uses: grafana/k6-action@v0.3.1
         with:
@@ -43,15 +46,3 @@ jobs:
             summary.html
             k6-summary-*.json
             k6-metrics-*.json
-      
-      - name: Notify on failure
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🚨 性能测试失败',
-              body: `性能测试在分支 ${context.ref} 上失败。\n请查看测试结果以了解详情。`
-            })
