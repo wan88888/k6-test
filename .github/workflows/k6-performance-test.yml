@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  issues: write
+
 jobs:
   performance-test:
     name: Run K6 Performance Tests
